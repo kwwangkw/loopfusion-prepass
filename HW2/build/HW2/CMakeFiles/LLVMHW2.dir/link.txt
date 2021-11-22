@@ -1,0 +1,1 @@
+/usr/bin/c++ -fPIC   -Wl,-rpath-link,  -Wl,-O3 -Wl,--gc-sections -shared  -o LLVMHW2.so CMakeFiles/LLVMHW2.dir/HW2PASS.cpp.o  -Wl,-rpath,"\$ORIGIN/../lib" 
