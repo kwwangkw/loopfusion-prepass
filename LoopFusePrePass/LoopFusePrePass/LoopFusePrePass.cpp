@@ -49,7 +49,7 @@
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
 #include "llvm/Transforms/Utils/CodeMoverUtils.h"
 #include "llvm/Transforms/Utils/LoopPeel.h"
-
+#include "llvm/IR/PassManager.h"
 
 #include <unordered_set>
 #include <vector>
@@ -65,9 +65,6 @@
 
 using namespace llvm;
 
-#define DEBUG_TYPE "fplicm"
-
-
 namespace {
 
 struct mypass: public FunctionPass {
@@ -82,6 +79,8 @@ struct mypass: public FunctionPass {
 
     bool runOnFunction(Function &F) override{
       bool Changed = false;
+      FunctionAnalysisManager FAM;
+      llvm::LoopFusePass.run(F, FAM);
       /* *******Implementation Starts Here******* */
 
       // Go through code and find all BBs
@@ -98,26 +97,18 @@ struct mypass: public FunctionPass {
 
       // SECOND - Conforming Bounds loosening
       // TBD
+      // opt -loop-fusion < input.bc > output.bc
       return Changed
     }
 }
 
-  void getAnalysisUsage(AnalysisUsage &AU) const override {
-    AU.addRequired<BranchProbabilityInfoWrapperPass>();
-    AU.addRequired<BlockFrequencyInfoWrapperPass>();
-    AU.addRequired<LoopInfoWrapperPass>();
-  }
+void getAnalysisUsage(AnalysisUsage &AU) const override {
+  AU.addRequired<BranchProbabilityInfoWrapperPass>();
+  AU.addRequired<BlockFrequencyInfoWrapperPass>();
+  AU.addRequired<LoopInfoWrapperPass>();
+}
 
-private:
-  /// Little predicate that returns true if the specified basic block is in
-  /// a subloop of the current one, not the current one itself.
-  bool inSubLoop(BasicBlock *BB, Loop *CurLoop, LoopInfo *LI) {
-    assert(CurLoop->contains(BB) && "Only valid if BB is IN the loop");
-    return LI->getLoopFor(BB) != CurLoop;
-  }
+} // end of namespace
 
-};
-} // end of namespace Correctness
-
-char Correctness::FPLICMPass::ID = 0;
-static RegisterPass<Correctness::FPLICMPass> X("fplicm-correctness", "Frequent Loop Invariant Code Motion for correctness test", false, false);
+char mypass::ID = 0;
+static RegisterPass<mypass> X("myfusionpass", "583 project fusion pass", false, false);

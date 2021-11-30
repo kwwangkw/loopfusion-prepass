@@ -1,5 +1,5 @@
 add_llvm_library( LLVMHW2 MODULE
-  HW2PASS.cpp
+  LoopFusePrePass.cpp
 
   PLUGIN_TOOL
   opt

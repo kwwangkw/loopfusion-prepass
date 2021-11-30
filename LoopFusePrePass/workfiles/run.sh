@@ -20,6 +20,12 @@ llvm-profdata merge -o ${1}.profdata default.profraw
 # Apply FPLICM
 opt -o ${1}.fplicm.bc -pgo-instr-use -pgo-test-profile-file=${1}.profdata -load ${PATH2LIB} ${PASS} < ${1}.ls.bc > /dev/null
 
+# added 11/30/21
+# vvvvvvvvvv
+opt -loop-fusion < input.bc > output.bc
+# opt -o -loop-fusion inputbenchmark.bc > /dev/null
+# ^^^^^^^^^^
+
 # Generate binary excutable before FPLICM: Unoptimzied code
 clang ${1}.ls.bc -o ${1}_no_fplicm
 # Generate binary executable after FPLICM: Optimized code
