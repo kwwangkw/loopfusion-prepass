@@ -72,15 +72,15 @@ struct mypass: public FunctionPass {
     mypass() : FunctionPass(ID) {}
 
     // Specify the list of analysis passes that will be used inside your pass.
-    void getAnalysisUsage(AnalysisUsage &AU) const {
-        AU.addRequired<BlockFrequencyInfoWrapperPass>(); // Analysis pass to load block execution count
-        AU.addRequired<BranchProbabilityInfoWrapperPass>(); // Analysis pass to load branch probability
-    }
+//    void getAnalysisUsage(AnalysisUsage &AU) const {
+//        AU.addRequired<BlockFrequencyInfoWrapperPass>(); // Analysis pass to load block execution count
+//        AU.addRequired<BranchProbabilityInfoWrapperPass>(); // Analysis pass to load branch probability
+//    }
 
     bool runOnFunction(Function &F) override{
       bool Changed = false;
-      FunctionAnalysisManager FAM;
-      llvm::LoopFusePass.run(F, FAM);
+//      FunctionAnalysisManager FAM;
+//      llvm::LoopFusePass.run(F, FAM);
       /* *******Implementation Starts Here******* */
 
       // Go through code and find all BBs
@@ -98,15 +98,15 @@ struct mypass: public FunctionPass {
       // SECOND - Conforming Bounds loosening
       // TBD
       // opt -loop-fusion < input.bc > output.bc
-      return Changed
+      return Changed;
     }
-}
+};
 
-void getAnalysisUsage(AnalysisUsage &AU) const override {
-  AU.addRequired<BranchProbabilityInfoWrapperPass>();
-  AU.addRequired<BlockFrequencyInfoWrapperPass>();
-  AU.addRequired<LoopInfoWrapperPass>();
-}
+//void getAnalysisUsage(AnalysisUsage &AU) const override {
+//  AU.addRequired<BranchProbabilityInfoWrapperPass>();
+//  AU.addRequired<BlockFrequencyInfoWrapperPass>();
+//  AU.addRequired<LoopInfoWrapperPass>();
+//}
 
 } // end of namespace
 
