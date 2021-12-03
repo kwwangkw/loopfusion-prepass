@@ -79,8 +79,9 @@ struct mypass: public FunctionPass {
 
     bool runOnFunction(Function &F) override{
       bool Changed = false;
-//      FunctionAnalysisManager FAM;
-//      llvm::LoopFusePass.run(F, FAM);
+      FunctionAnalysisManager FAM;
+      llvm::LoopFusePass lfp;
+      lfp.run(F, FAM);
       /* *******Implementation Starts Here******* */
 
       // Go through code and find all BBs
