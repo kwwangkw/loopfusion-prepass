@@ -109,7 +109,7 @@
  };
   
  static cl::opt<FusionDependenceAnalysisChoice> FusionDependenceAnalysis(
-     "loop-fusion-dependence-analysis",
+     "loop-fusion-dependence-analysis-583",
      cl::desc("Which dependence analysis should loop fusion use?"),
      cl::values(clEnumValN(FUSION_DEPENDENCE_ANALYSIS_SCEV, "scev",
                            "Use the scalar evolution interface"),
@@ -120,13 +120,13 @@
      cl::Hidden, cl::init(FUSION_DEPENDENCE_ANALYSIS_ALL), cl::ZeroOrMore);
   
  static cl::opt<unsigned> FusionPeelMaxCount(
-     "loop-fusion-peel-max-count", cl::init(0), cl::Hidden,
+     "loop-fusion-peel-max-count-583", cl::init(0), cl::Hidden,
      cl::desc("Max number of iterations to be peeled from a loop, such that "
               "fusion can take place"));
   
  #ifndef NDEBUG
  static cl::opt<bool>
-     VerboseFusionDebugging("loop-fusion-verbose-debug",
+     VerboseFusionDebugging("loop-fusion-verbose-debug-583",
                             cl::desc("Enable verbose debugging for Loop Fusion"),
                             cl::Hidden, cl::init(false), cl::ZeroOrMore);
  #endif
