@@ -12,5 +12,18 @@ int main(){
             int k = i;
         }
     }
+    else if (a == 3) {
+        for(int i = 0; i < 10; i++){
+            int k = i+1;
+        }
+    }
+    else if (a == 4) {
+        int k = 0;
+    }
+    else {
+        for(int i = 0; i < 10; i++){
+            int k = i+1;
+        }
+    }
     return 0;
 }
