@@ -88,16 +88,24 @@ struct mypass: public FunctionPass {
 
       // FIRST - Control Equivalency loosening
       // Iterate through the code and find all for loops
+          // LoopInfoWrapper, getLoopInfo()
       // For each for loop:
-      // 1) Check if the follow command is an if statement
-      // 2) Check if the next command is another for loop header
-      //    - check for no intervening code
-      //    - check for dependencies
+      // 1) Check if the following command (successor) is an if statement (Basic Block Name: if.then)(B->getName())
+      // 2) Check if the next command (successor) is another for loop header
+      //    - check for no intervening code (check basic blocks in between)
+      //    - check for dependencies 
       // 3) If the two conditions above are true:
-      // 4) Move the inner for loop out of the if statement, nest it's components in a new if statement
+      // 4) If loops conform:
+      // 5) Move the inner for loop out of the if statement, nest it's components in a new if statement
 
       // SECOND - Conforming Bounds loosening
-      // TBD
+      // 1) Find the largest # iterations
+      // 2) Make all int i = 0;
+      // 3) For all int i declarations changed, add if control statement
+      // 4) Make all i < statements i < largest# iterations
+      // 5) Add control statement if (i < prev value)
+      // 6) If not i++, change to i++ 
+      // 7) Add control statement if (i % prev value == 0)
       // opt -loop-fusion < input.bc > output.bc
       return Changed;
     }
