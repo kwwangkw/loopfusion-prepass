@@ -1836,6 +1836,7 @@
    }
   
    bool runOnFunction(Function &F) override {
+     errs() << "...STARTING...\n";
      if (skipFunction(F))
        return false;
      auto &LI = getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
@@ -1856,6 +1857,7 @@
  } // namespace
   
  PreservedAnalyses LoopFusePass::run(Function &F, FunctionAnalysisManager &AM) {
+   errs() << "...STARTING2...\n";
    auto &LI = AM.getResult<LoopAnalysis>(F);
    auto &DT = AM.getResult<DominatorTreeAnalysis>(F);
    auto &DI = AM.getResult<DependenceAnalysis>(F);
