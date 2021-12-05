@@ -67,6 +67,7 @@
  #include "llvm/Transforms/Utils/BasicBlockUtils.h"
  #include "llvm/Transforms/Utils/CodeMoverUtils.h"
  #include "llvm/Transforms/Utils/LoopPeel.h"
+ #include <iostream>
   
  using namespace llvm;
   
@@ -196,7 +197,9 @@
      // prevent fusion. For each block, walk over all instructions and collect
      // the memory reads and writes If any instructions that prevent fusion are
      // found, invalidate this object and return.
+     errs() <<"Basic Blocks:\n";
      for (BasicBlock *BB : L->blocks()) {
+       errs() << "    " << BB->getName() << "\n";
        if (BB->hasAddressTaken()) {
          invalidate();
          reportInvalidCandidate(AddressTakenBB);
@@ -317,6 +320,7 @@
    /// fusion. Note that this only checks whether a single loop can be fused - it
    /// does not check whether it is *legal* to fuse two loops together.
    bool isEligibleForFusion(ScalarEvolution &SE) const {
+     errs() << "isEligibleForFusion: isValid?: " << isValid() << '\n';
      if (!isValid()) {
        LLVM_DEBUG(dbgs() << "FC has invalid CFG requirements!\n");
        if (!Preheader)
@@ -331,28 +335,33 @@
          ++InvalidLatch;
        if (L->isInvalid())
          ++InvalidLoop;
-  
+        errs() << "    isEligibleForFusion is returning false\n"; 
        return false;
      }
   
      // Require ScalarEvolution to be able to determine a trip count.
+     errs() << "Trip count: " << SE.getBackedgeTakenCount(L) << "\n";
      if (!SE.hasLoopInvariantBackedgeTakenCount(L)) {
        LLVM_DEBUG(dbgs() << "Loop " << L->getName()
                          << " trip count not computable!\n");
+        errs() << "    reportInvalidCandidate(UnknownTripCount) is false\n"; 
        return reportInvalidCandidate(UnknownTripCount);
      }
   
      if (!L->isLoopSimplifyForm()) {
        LLVM_DEBUG(dbgs() << "Loop " << L->getName()
                          << " is not in simplified form!\n");
+        errs() << "    eportInvalidCandidate(NotSimplifiedForm) is false\n"; 
        return reportInvalidCandidate(NotSimplifiedForm);
      }
   
      if (!L->isRotatedForm()) {
        LLVM_DEBUG(dbgs() << "Loop " << L->getName() << " is not rotated!\n");
+       errs() << "    reportInvalidCandidate(NotRotated); is false\n"; 
        return reportInvalidCandidate(NotRotated);
      }
   
+      errs() << "    isEligibleForFusion is returning true\n";
      return true;
    }
   
@@ -570,6 +579,8 @@
      }
  #endif
   
+      errs() << "starting fuseLoops(F)...\n";
+
      LLVM_DEBUG(dbgs() << "Performing Loop Fusion on function " << F.getName()
                        << "\n");
      bool Changed = false;
@@ -593,6 +604,8 @@
            });
          }
  #endif
+
+          errs() << "right before 'collectFusionCandidates(LV)'...\n";
   
          collectFusionCandidates(LV);
          Changed |= fuseCandidates();
@@ -642,11 +655,16 @@
    /// are eligible for fusion. Place all eligible fusion candidates into Control
    /// Flow Equivalent sets, sorted by dominance.
    void collectFusionCandidates(const LoopVector &LV) {
+
+     errs() << "starting collectFusionCandidates()\n";
+
      for (Loop *L : LV) {
+       errs() << "LV loop iteration **********\n";
        TTI::PeelingPreferences PP =
            gatherPeelingPreferences(L, SE, TTI, None, None);
        FusionCandidate CurrCand(L, &DT, &PDT, ORE, PP);
        if (!CurrCand.isEligibleForFusion(SE))
+          errs() << "   *** ineligible for fusion ***   \n";
          continue;
   
        // Go through each list in FusionCandidates and determine if L is control
@@ -655,11 +673,13 @@
        // If no suitable list is found, start another list and add it to
        // FusionCandidates.
        bool FoundSet = false;
-  
+       errs() << "Number FusionCandidates" << FusionCandidates.size() << "\n";
        for (auto &CurrCandSet : FusionCandidates) {
+         errs() << CurrCand << " is control flow equiv?: " << isControlFlowEquivalent(*CurrCandSet.begin(), CurrCand) << "\n";
          if (isControlFlowEquivalent(*CurrCandSet.begin(), CurrCand)) {
            CurrCandSet.insert(CurrCand);
            FoundSet = true;
+            errs() << "Adding" << CurrCand << " to existing candidate set\n";
  #ifndef NDEBUG
            if (VerboseFusionDebugging)
              LLVM_DEBUG(dbgs() << "Adding " << CurrCand
@@ -680,6 +700,7 @@
        }
        NumFusionCandidates++;
      }
+     errs() << "NumFusionCandidates: " << NumFusionCandidates << '\n';
    }
   
    /// Determine if it is beneficial to fuse two loops.
@@ -1324,6 +1345,9 @@
    Loop *performFusion(const FusionCandidate &FC0, const FusionCandidate &FC1) {
      assert(FC0.isValid() && FC1.isValid() &&
             "Expecting valid fusion candidates");
+    
+      errs() << "Fusion Candidate 0: \n"; FC0.dump();
+      errs() << "Fusion Candidate 1: \n"; FC1.dump();
   
      LLVM_DEBUG(dbgs() << "Fusion Candidate 0: \n"; FC0.dump();
                 dbgs() << "Fusion Candidate 1: \n"; FC1.dump(););
@@ -1836,6 +1860,7 @@
    }
   
    bool runOnFunction(Function &F) override {
+     errs() << "...STARTING...\n";
      if (skipFunction(F))
        return false;
      auto &LI = getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
@@ -1850,12 +1875,14 @@
      const DataLayout &DL = F.getParent()->getDataLayout();
   
      LoopFuser LF(LI, DT, DI, SE, PDT, ORE, DL, AC, TTI);
+     errs() << "right before 'LF.fuseLoops(F)'\n";
      return LF.fuseLoops(F);
    }
  };
  } // namespace
   
  PreservedAnalyses LoopFusePass::run(Function &F, FunctionAnalysisManager &AM) {
+   errs() << "...STARTING2...\n";
    auto &LI = AM.getResult<LoopAnalysis>(F);
    auto &DT = AM.getResult<DominatorTreeAnalysis>(F);
    auto &DI = AM.getResult<DependenceAnalysis>(F);
@@ -1894,3 +1921,5 @@
  INITIALIZE_PASS_END(LoopFuseLegacy, "loop-fusion", "Loop Fusion", false, false)
   
  FunctionPass *llvm::createLoopFusePass() { return new LoopFuseLegacy(); }
+
+ static RegisterPass<LoopFuseLegacy> X("loopfuselegacy", "paaaaaaaaaaaass", false, false);
