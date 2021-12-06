@@ -684,10 +684,12 @@ private:
       TTI::PeelingPreferences PP =
           gatherPeelingPreferences(L, SE, TTI, None, None);
       FusionCandidate CurrCand(L, &DT, &PDT, ORE, PP);
-      if (!CurrCand.isEligibleForFusion(SE))
-          errs() << "   *** ineligible for fusion ***   \n";
+      errs() << "HERE1" << "\n";
+      if (!CurrCand.isEligibleForFusion(SE)) {
+        errs() << "   *** ineligible for fusion ***   \n";
         continue;
-  
+      }
+      errs() << "HERE2" << "\n";
       // Go through each list in FusionCandidates and determine if L is control
       // flow equivalent with the first loop in that list. If it is, append LV.
       // If not, go to the next list.
