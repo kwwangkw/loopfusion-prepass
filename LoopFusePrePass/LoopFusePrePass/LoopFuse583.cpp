@@ -576,7 +576,21 @@ public:
     if (!LI.empty()) { // All for loops stored in LoopFuser LI, LDT
       for (auto CurrLoop : LI) { // For each for loop:
         errs() << "currloop dump: \n";
+        errs() << "FULL LOOP:\n";
         CurrLoop->dump();
+        errs() << "PREHEADER:\n";
+        CurrLoop->getLoopPreheader()->dump();
+        errs() << "PREHEADER NAME:\n";
+        errs() << CurrLoop->getLoopPreheader()->getName() << "\n";
+        errs() << "HEADER:\n";
+        CurrLoop->getHeader()->dump();
+        errs() << "HEADER NAME:\n";
+        errs() << CurrLoop->getHeader()->getName() << "\n";
+        errs() << "\nBLOCKS IN THIS LOOP:\n";
+        for (auto block : CurrLoop->getBlocks()) {
+          errs() << "Pred " << block->getParent() << "\n";
+          errs() << "Block " << block->getName() << "\n";
+        }
         // 1) Check if the following command (successor) is an if statement (Basic Block Name: if.then)(B->getName())
         // 2) Check if the next command (successor) is another for loop header
         //    - check for no intervening code (check basic blocks in between)
