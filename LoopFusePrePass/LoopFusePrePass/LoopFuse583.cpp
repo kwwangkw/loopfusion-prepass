@@ -68,6 +68,7 @@
 #include "llvm/Transforms/Utils/CodeMoverUtils.h"
 #include "llvm/Transforms/Utils/LoopPeel.h"
 #include <iostream>
+#include <unordered_map>
   
 using namespace llvm;
   
@@ -573,6 +574,17 @@ public:
   bool prepass(Function &F) {
     bool Changed = false;
     std::unordered_map<BasicBlock*, int> loopHeaders;
+    std::vector<BasicBlock*> blocks;
+
+
+    // map: for.end BB* -> pair<for.body BB*, loopDepth>
+    //     construct this map by iterating through loops and using getBlocks()
+    // blocks vector (all blocks in function): 
+    //     iterate through - if we see a for.body block, go two up to check if it's a if.then, if it's an if.then, go one up and see if it's an for.end
+    //     if it's a for.end: search map for for.end key, and the value is the for.body block
+    //     as a result, we now have for.body for two loops: we confirmed that there exists a for-if-for structure
+
+
 
     if (!LI.empty()) { // All for loops stored in LoopFuser LI, LDT
       for (auto CurrLoop : LI) { // For each for loop:
@@ -596,42 +608,48 @@ public:
         // }
       }
     }    
-    errs() << "LOOP HEADERS: \n";
     
     for (Function::iterator bb = F.begin(), e = F.end(); bb != e; ++bb) {
       BasicBlock &block_ref = *bb;
       BasicBlock *block = &block_ref;
       errs() << block->getName() <<"\n";
+      blocks.push_back(block);
     }
 
+    errs() << "LOOP HEADERS: \n";
     for (auto it = loopHeaders.begin(); it != loopHeaders.end(); ++it) {
       errs() << it->first->getName() << " @ depth " << it->second << "\n";
     }
     errs() << "\n";
+
     int counter = 0;
-    for (Function::iterator bb = F.begin(), e = F.end(); bb != e; ++bb) {
-      BasicBlock &block_ref = *bb;
-      BasicBlock *block = &block_ref;
-      errs() << block->getName() << "\n";
-      if (loopHeaders.find(block) != loopHeaders.end()) { // if block is in loopHeaders map
-        errs() << "    this block is a loop header\n";
-      }
-      if (counter > 1) { // we check predecessor 2 levels up, so it makes no sense to check pred until 3rd bb
-        if (block->getSinglePredecessor()){
-          errs() << "Pred1: " << block->getSinglePredecessor()->getName() << "\n";
-          if (block->getSinglePredecessor()->getSinglePredecessor()){
-            errs() << "Pred1: " << block->getSinglePredecessor()->getSinglePredecessor()->getName() << "\n";
-          }
-          else {
-            errs() << "No Pred2\n";
-          }
-        }
-        else {
-          errs() << "No Pred1\n";
-        }
-      }
-      counter++;
-    } // for Function::iterator bb = F.begin()
+    for (int i = 0; i < blocks.size(); i++) {
+      
+    }
+
+    // for (Function::iterator bb = F.begin(), e = F.end(); bb != e; ++bb) {
+    //   BasicBlock &block_ref = *bb;
+    //   BasicBlock *block = &block_ref;
+    //   errs() << block->getName() << "\n";
+    //   if (loopHeaders.find(block) != loopHeaders.end()) { // if block is in loopHeaders map
+    //     errs() << "    this block is a loop header\n";
+    //   }
+    //   if (counter > 1) { // we check predecessor 2 levels up, so it makes no sense to check pred until 3rd bb
+    //     if (block->getSinglePredecessor()){
+    //       errs() << "    pred1: " << block->getSinglePredecessor()->getName() << "\n";
+    //       if (block->getSinglePredecessor()->getSinglePredecessor()){
+    //         errs() << "    pred2: " << block->getSinglePredecessor()->getSinglePredecessor()->getName() << "\n";
+    //       }
+    //       else {
+    //         errs() << "    no pred2\n";
+    //       }
+    //     }
+    //     else {
+    //       errs() << "    no pred1\n";
+    //     }
+    //   }
+    //   counter++;
+    // } // for Function::iterator bb = F.begin()
 
     return Changed;
   }
