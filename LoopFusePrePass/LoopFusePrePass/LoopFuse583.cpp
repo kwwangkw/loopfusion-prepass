@@ -572,34 +572,66 @@ public:
   // 
   bool prepass(Function &F) {
     bool Changed = false;
-    
+    std::unordered_map<BasicBlock*, int> loopHeaders;
+
     if (!LI.empty()) { // All for loops stored in LoopFuser LI, LDT
       for (auto CurrLoop : LI) { // For each for loop:
-        errs() << "currloop dump: \n";
-        errs() << "FULL LOOP:\n";
-        CurrLoop->dump();
-        errs() << "PREHEADER:\n";
-        CurrLoop->getLoopPreheader()->dump();
-        errs() << "PREHEADER NAME:\n";
-        errs() << CurrLoop->getLoopPreheader()->getName() << "\n";
-        errs() << "HEADER:\n";
-        CurrLoop->getHeader()->dump();
-        errs() << "HEADER NAME:\n";
-        errs() << CurrLoop->getHeader()->getName() << "\n";
-        errs() << "\nBLOCKS IN THIS LOOP:\n";
-        for (auto block : CurrLoop->getBlocks()) {
-          errs() << "Pred " << block->getParent() << "\n";
-          errs() << "Block " << block->getName() << "\n";
-        }
-        // 1) Check if the following command (successor) is an if statement (Basic Block Name: if.then)(B->getName())
-        // 2) Check if the next command (successor) is another for loop header
-        //    - check for no intervening code (check basic blocks in between)
-        //    - check for dependencies 
-        // 3) If the two conditions above are true:
-        // 4) If loops conform:
-        // 5) Move the inner for loop out of the if statement, nest it's components in a new if statement
+        loopHeaders[CurrLoop->getHeader()] = CurrLoop->getLoopDepth();
+        // errs() << "currloop dump: \n";
+        // errs() << "FULL LOOP:\n";
+        // CurrLoop->dump();
+        // errs() << "PREHEADER:\n";
+        // CurrLoop->getLoopPreheader()->dump();
+        // errs() << "PREHEADER NAME:\n";
+        // errs() << CurrLoop->getLoopPreheader()->getName() << "\n";
+        // errs() << "HEADER:\n";
+        // CurrLoop->getHeader()->dump();
+        // errs() << "HEADER NAME:\n";
+        // errs() << CurrLoop->getHeader()->getName() << "\n";
+        // errs() << "\nBLOCKS IN THIS LOOP:\n";
+        // for (auto block : CurrLoop->getBlocks()) {
+        //   errs() << "Pred " << block->getSinglePredecessor()->getName() << "\n";
+        //   errs() << "Block " << block->getName() << "\n";
+        //   errs() << "Block " << block->getName() << "\n";
+        // }
       }
     }    
+    errs() << "LOOP HEADERS: \n";
+    
+    for (Function::iterator bb = F.begin(), e = F.end(); bb != e; ++bb) {
+      BasicBlock &block_ref = *bb;
+      BasicBlock *block = &block_ref;
+      errs() << block->getName() <<"\n";
+    }
+
+    for (auto it = loopHeaders.begin(); it != loopHeaders.end(); ++it) {
+      errs() << it->first->getName() << " @ depth " << it->second << "\n";
+    }
+    errs() << "\n";
+    int counter = 0;
+    for (Function::iterator bb = F.begin(), e = F.end(); bb != e; ++bb) {
+      BasicBlock &block_ref = *bb;
+      BasicBlock *block = &block_ref;
+      errs() << block->getName() << "\n";
+      if (loopHeaders.find(block) != loopHeaders.end()) { // if block is in loopHeaders map
+        errs() << "    this block is a loop header\n";
+      }
+      if (counter > 1) { // we check predecessor 2 levels up, so it makes no sense to check pred until 3rd bb
+        if (block->getSinglePredecessor()){
+          errs() << "Pred1: " << block->getSinglePredecessor()->getName() << "\n";
+          if (block->getSinglePredecessor()->getSinglePredecessor()){
+            errs() << "Pred1: " << block->getSinglePredecessor()->getSinglePredecessor()->getName() << "\n";
+          }
+          else {
+            errs() << "No Pred2\n";
+          }
+        }
+        else {
+          errs() << "No Pred1\n";
+        }
+      }
+      counter++;
+    } // for Function::iterator bb = F.begin()
 
     return Changed;
   }
