@@ -574,7 +574,7 @@ public:
   // 
   bool prepass(Function &F) {
     bool Changed = false;
-    //std::unordered_map<BasicBlock*, int> loopHeaders;
+    std::unordered_map<BasicBlock*, int> loopHeaders;
     
     // vec of all blocks in function
     std::vector<BasicBlock*> blocks;
@@ -670,7 +670,7 @@ public:
             
 
             errs() << "     if block:" << blocks[i-2]->getName() << "\n";
-            errs() << "     start of foriffor: " << loopEnds[blocks[i-3]].first->getName( << "\n\n");
+            errs() << "     start of foriffor: " << loopEnds[blocks[i-3]].first->getName() << "\n\n";
           }
           
         }
