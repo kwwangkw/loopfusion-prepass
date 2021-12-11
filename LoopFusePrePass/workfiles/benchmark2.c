@@ -2,7 +2,9 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+
 int main(){
+
     int a = 2;
     for(int i = 0; i < 10; i++){
         int j = i;
@@ -12,17 +14,14 @@ int main(){
             int k = i;
         }
     }
-    else if (a == 3) {
-        for(int i = 0; i < 10; i++){
-            int k = i+1;
-        }
+
+    int b = 2;
+    for(int i = 0; i < 20; i++){
+        int l = i;
     }
-    else if (a == 4) {
-        int k = 0;
-    }
-    else {
-        for(int i = 0; i < 10; i++){
-            int k = i+1;
+    if (b == 2) {
+        for(int i = 0; i < 20; i++){
+            int m = i;
         }
     }
     return 0;

@@ -1001,12 +1001,16 @@ private:
   bool fuseCandidates() {
     bool Fused = false;
     LLVM_DEBUG(printFusionCandidates(FusionCandidates));
+    errs() << "IN FUSE CANDIDATES\n";
     for (auto &CandidateSet : FusionCandidates) {
       if (CandidateSet.size() < 2)
         continue;
   
       LLVM_DEBUG(dbgs() << "Attempting fusion on Candidate Set:\n"
                         << CandidateSet << "\n");
+      
+      errs() << "Attempting fusion on Candidate Set:\n"
+                        << CandidateSet << "\n";
   
       for (auto FC0 = CandidateSet.begin(); FC0 != CandidateSet.end(); ++FC0) {
         assert(!LDT.isRemovedLoop(FC0->L) &&
@@ -1040,6 +1044,10 @@ private:
                           << "Difference in loop trip counts: " << *TCDifference
                           << " is greater than maximum peel count specificed: "
                           << FusionPeelMaxCount << "\n");
+              errs()
+                          << "Difference in loop trip counts: " << *TCDifference
+                          << " is greater than maximum peel count specificed: "
+                          << FusionPeelMaxCount << "\n";
             } else {
               // Dependent on peeling being performed on the first loop, and
               // assuming all other conditions for fusion return true.
@@ -1050,6 +1058,8 @@ private:
           if (!SameTripCount) {
             LLVM_DEBUG(dbgs() << "Fusion candidates do not have identical trip "
                                   "counts. Not fusing.\n");
+            errs() << "Fusion candidates do not have identical trip "
+                                  "counts. Not fusing.\n";
             reportLoopFusion<OptimizationRemarkMissed>(*FC0, *FC1,
                                                         NonEqualTripCount);
             continue;
@@ -1058,6 +1068,8 @@ private:
           if (!isAdjacent(*FC0, *FC1)) {
             LLVM_DEBUG(dbgs()
                         << "Fusion candidates are not adjacent. Not fusing.\n");
+            errs()
+                        << "Fusion candidates are not adjacent. Not fusing.\n";
             reportLoopFusion<OptimizationRemarkMissed>(*FC0, *FC1, NonAdjacent);
             continue;
           }
@@ -1065,6 +1077,8 @@ private:
           if (!FC0->GuardBranch && FC1->GuardBranch) {
             LLVM_DEBUG(dbgs() << "The second candidate is guarded while the "
                                   "first one is not. Not fusing.\n");
+            errs() << "The second candidate is guarded while the "
+                                  "first one is not. Not fusing.\n";
             reportLoopFusion<OptimizationRemarkMissed>(
                 *FC0, *FC1, OnlySecondCandidateIsGuarded);
             continue;
@@ -1076,6 +1090,8 @@ private:
               !haveIdenticalGuards(*FC0, *FC1) && !TCDifference) {
             LLVM_DEBUG(dbgs() << "Fusion candidates do not have identical "
                                   "guards. Not Fusing.\n");
+            errs() << "Fusion candidates do not have identical "
+                                  "guards. Not Fusing.\n";
             reportLoopFusion<OptimizationRemarkMissed>(*FC0, *FC1,
                                                         NonIdenticalGuards);
             continue;
@@ -1086,6 +1102,8 @@ private:
                                   &DI)) {
             LLVM_DEBUG(dbgs() << "Fusion candidate contains unsafe "
                                   "instructions in preheader. Not fusing.\n");
+            errs() << "Fusion candidate contains unsafe "
+                                  "instructions in preheader. Not fusing.\n";
             reportLoopFusion<OptimizationRemarkMissed>(*FC0, *FC1,
                                                         NonEmptyPreheader);
             continue;
@@ -1099,6 +1117,8 @@ private:
                                     &PDT, &DI)) {
               LLVM_DEBUG(dbgs() << "Fusion candidate contains unsafe "
                                     "instructions in exit block. Not fusing.\n");
+              errs() << "Fusion candidate contains unsafe "
+                                    "instructions in exit block. Not fusing.\n";                      
               reportLoopFusion<OptimizationRemarkMissed>(*FC0, *FC1,
                                                           NonEmptyExitBlock);
               continue;
@@ -1111,6 +1131,9 @@ private:
               LLVM_DEBUG(dbgs()
                           << "Fusion candidate contains unsafe "
                             "instructions in guard block. Not fusing.\n");
+              errs()
+                          << "Fusion candidate contains unsafe "
+                            "instructions in guard block. Not fusing.\n";              
               reportLoopFusion<OptimizationRemarkMissed>(*FC0, *FC1,
                                                           NonEmptyGuardBlock);
               continue;
@@ -1121,6 +1144,7 @@ private:
           // violate them.
           if (!dependencesAllowFusion(*FC0, *FC1)) {
             LLVM_DEBUG(dbgs() << "Memory dependencies do not allow fusion!\n");
+            errs() << "Memory dependencies do not allow fusion!\n";
             reportLoopFusion<OptimizationRemarkMissed>(*FC0, *FC1,
                                                         InvalidDependencies);
             continue;
@@ -1141,6 +1165,8 @@ private:
   
           LLVM_DEBUG(dbgs() << "\tFusion is performed: " << *FC0 << " and "
                             << *FC1 << "\n");
+          errs() << "\tFusion is performed: " << *FC0 << " and "
+                            << *FC1 << "\n";
   
           FusionCandidate FC0Copy = *FC0;
           // Peel the loop after determining that fusion is legal. The Loops
