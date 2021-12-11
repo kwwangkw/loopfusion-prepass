@@ -851,13 +851,13 @@ public:
                     hasForIfFor = true;
                     forIfFors.push_back(loopEnds[blocks[i-3]]);
 
-                    for (auto it = succ_begin(blocks[i]), end = succ_end(blocks[i]); it != end; ++it) {
+                    for (auto it = succ_begin(blocks[i-3]), end = succ_end(blocks[i-3]); it != end; ++it) {
                         BasicBlock* succblock = *it;
                         // if the succ block to for.cond is not for.body (but instd the bb that leads to for.end)
-                        if (succblock->getName().find("for.body") == -1 /* && succblock->getSingleSuccessor() != nullptr*/) {
+                        if (succblock->getName().find("if.then") == -1 /* && succblock->getSingleSuccessor() != nullptr*/) {
                             BasicBlock* endBlock = succblock/*->getSingleSuccessor()*/;
                             errs() << "    this should be the end block: " << endBlock->getName() << '\n';
-                            forIfForsHeaderToEnd[blocks[i-3]] = succblock;
+                            forIfForsHeaderToEnd[blocks[i-3]->getSinglePredecessor()] = succblock;
                             allowedIfBlocks.insert(succblock);
                         }
                     }
@@ -880,59 +880,75 @@ public:
         
         errs() << "ForIfFors:\n";
         for(auto forBlock : forIfFors){
-            errs() << "       " << forBlock->getName() << "\n";
+          errs() << "       " << forBlock->getName() << "\n";
         }
 
+        errs() << "\nforIfForsHeaderToEnd:\n";
+        for (auto block : forIfForsHeaderToEnd) {
+          errs() << block.first->getName() << "->" << block.second->getName() << "\n";
+        }
+        errs() << "\n\n";
+
         for (auto forCond : forIfFors) {
-            // this vector keeps track of bb's relevant to this for-if-for relationship
-            // this contains blocks ranging from "for.cond" to "if.end", inclusive
-            std::vector<BasicBlock*> forIfForBlocks;
-            // when flag is true, it means we are in the relevant for-if-for blocks in the blocks vector
-            bool flag = false;
-            BasicBlock* forCondBlock;
-            for (BasicBlock* block : blocks) {
-                if (block == forCond){
-                    flag = true;
-                    forCondBlock = block;
-                }
-                if (flag) {
-                    // if it's an if statement (getName has "if." in it), don't push unless it's found in a set that has the allowed if statements in it.
-                    // also, don't push if it's a "for." statement and the depth isn't == for->getLoopDepth
-                    // if (block->getName().find("if.") != -1 && allowedIfBlocks.find(block) == allowedIfBlocks.end()){
-                    //     break;
-                    // }
-                    // else if (block->getName().find("for.") != -1 && loopDepths[block] != loopDepths[forCond]) { // todo:
-                    //     break;
-                    // }
-                    if (blockToLoopHeader[block] == forCondBlock && block != forCondBlock) {
-                        continue;
-                    }
-                    else {
-                        forIfForBlocks.push_back(block);
-                    }
-                }
-                if (block == forIfForsHeaderToEnd[forCondBlock]) {
-                    break;
-                    // this check for block == forIfForsHeaderToEnd[forCondBlock] is to make sure pushing blocks to forIfForBlocks
-                    // doesn't get halted when you reach an if.end statement of a if statement nested in the second for loop
-                }
-            }
+          errs() << "\nDOING " << forCond->getName() << ":\n";
+          // this vector keeps track of bb's relevant to this for-if-for relationship
+          // this contains blocks ranging from "for.cond" to "if.end", inclusive
+          std::vector<BasicBlock*> forIfForBlocks;
+          // when flag is true, it means we are in the relevant for-if-for blocks in the blocks vector
+          bool flag = false;
+          BasicBlock* forCondBlock;
+          errs() << "Blocks:\n";
+          for (auto block: blocks) {
+            errs() << "   " << block->getName() << "\n";
+          }
+          errs() << "Ok end of blocks\n";
+          for (BasicBlock* block : blocks) {
+              errs() << block->getName() << "\n";
+              if (block == forCond){
+                  errs() << "   found" << block->getName() << "\n";
+                  flag = true;
+              }
+              if (flag) {
+                  // if it's an if statement (getName has "if." in it), don't push unless it's found in a set that has the allowed if statements in it.
+                  // also, don't push if it's a "for." statement and the depth isn't == for->getLoopDepth
+                  // if (block->getName().find("if.") != -1 && allowedIfBlocks.find(block) == allowedIfBlocks.end()){
+                  //     break;
+                  // }
+                  // else if (block->getName().find("for.") != -1 && loopDepths[block] != loopDepths[forCond]) { // todo:
+                  //     break;
+                  // }
+                  if (blockToLoopHeader[block] == forCond && block != forCond) {
+                      continue;
+                  }
+                  else {
+                      errs() << "   pushing in " << block->getName() << "\n";
+                      forIfForBlocks.push_back(block);
+                  }
+              }
+              if (block == forIfForsHeaderToEnd[forCond]) {
+                  errs() << "here sad break\n";
+                  break;
+                  // this check for block == forIfForsHeaderToEnd[forCondBlock] is to make sure pushing blocks to forIfForBlocks
+                  // doesn't get halted when you reach an if.end statement of a if statement nested in the second for loop
+              }
+          }
 
-            // now we have a vector of all the blocks in order for this specific for if for
-            // next we do the changes
-            
-            errs() << "forIfForBlocks" << "\n";
-            for (auto block: forIfForBlocks){
-              errs() << "      " << block->getName() << "\n";
-            }
-            
-            // here in forIfForBlocks we've isolated the for if fors. Should always be 8 blocks otherwise there's nested branches in the internal for,
-            // which we do not handle in this implemention (yet)
+          // now we have a vector of all the blocks in order for this specific for if for
+          // next we do the changes
+          
+          errs() << "forIfForBlocks" << "\n";
+          for (auto block: forIfForBlocks){
+            errs() << "      " << block->getName() << "\n";
+          }
+          
+          // here in forIfForBlocks we've isolated the for if fors. Should always be 8 blocks otherwise there's nested branches in the internal for,
+          // which we do not handle in this implemention (yet)
 
-            if (forIfForBlocks.size() == 8) {
-                rearrangeSuccessors(forIfForBlocks);
-                Changed = true;
-            }
+          if (forIfForBlocks.size() == 8) {
+              errs() << "REARRANGING SUCCESSORS\n";
+              rearrangeSuccessors(forIfForBlocks);
+              Changed = true;
+          }
         }
 
         return Changed;
