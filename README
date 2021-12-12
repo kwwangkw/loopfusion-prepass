@@ -1,2 +1,23 @@
-EECS 583 Final Project
-Loop Fusion compiler pre pass.
+EECS 583 Research Project
+Loop Fusion compiler pre pass. Constraint loosening pass - focused on intervening code movement and bound conforming, especially the identified case of "for-if-for" statement movement.
+Allows for greater percentage of loop fuses to occur through LLVM compiler -loop-fusion. Full research paper provided upon request.
+
+To run:
+cd into build and run:
+  cmake ..
+  make -j2
+cd into workfiles and run:
+  clang -Xclang -disable-O0-optnone -emit-llvm -c benchmark1.c -o benchmark1.bc
+  opt -load ../build/LoopFusePrePass/LLVMHW2.so -loopfuseprepass < benchmark1.bc > output.bc
+  opt -loop-rotate < output.bc > temp.bc
+  opt -mem2reg -loop-fusion < temp.bc > output2.bc
+
+To visualize:
+cd into workfiles and run:
+  ./viz.sh output2
+  
+To run .bc files:
+cd into workfiles and run:
+  llc -filetype=obj my-file-to-run.bc
+  gcc -no-pie my-file-to-run.o
+  ./a.out
